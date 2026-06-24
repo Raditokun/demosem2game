@@ -42,7 +42,7 @@ void Game::Init() {
     camera.zoom = 1.0f;
     screenShakeTimer = 0;
 
-    // ── Muat Aset (harus setelah window init) ──────────
+    //  Muat Aset (harus setelah window init) 
     if (!IsAudioDeviceReady()) {
         InitAudioDevice();
         playlist = { "assets/bg/1.MP3", "assets/bg/2.MP3", "assets/bg/3.MP3", "assets/bg/4.MP3", "assets/bg/5.MP3" };
@@ -56,7 +56,6 @@ void Game::Init() {
     assets.Load("proj_freeze", "assets/frezze_partikel.png");
     assets.Load("proj_tesla", "assets/Tesla_Partikel.png");
     assets.Load("proj_plasma", "assets/Plasma_Partikel.png");
-    // ── Sprite kartu (5 tipe × 3 tier) ─────────────────
     assets.Load("card_laser_t1",   "assets/LaserT1Card.png");
     assets.Load("card_laser_t2",   "assets/LaserT2Card.png");
     assets.Load("card_laser_t3",   "assets/LaserT3Card.png");
@@ -72,7 +71,7 @@ void Game::Init() {
     assets.Load("card_plasma_t1",  "assets/PlasmaT1Card.png");
     assets.Load("card_plasma_t2",  "assets/PlasmaT2Card.png");
     assets.Load("card_plasma_t3",  "assets/PlasmaT3Card.png");
-    // ── Sprite tower (sprite sheet berarah) ────────
+   
     // FREEZE: T1-T3, keempat arah
     assets.Load("tower_freeze_1_f", "assets/FREEZE T1 F.png");
     assets.Load("tower_freeze_1_b", "assets/FREEZE T1 B.png");
@@ -127,14 +126,31 @@ void Game::Init() {
     menuGifTexture = LoadTextureFromImage(menuGifImage);
     assets.Load("hero_marine", "assets/HeroMarine.png");
     assets.Load("ult_lightning", "assets/Lightning Strike.png");
-    assets.Load("map_bg", "assets/Map.png");
+    // Load di CPU lalu chop jadi 12 frame 1920x1080 terpisah.
+    {
+        Image mapSheet = LoadImage("assets/Map.png");
+        if (mapSheet.data != nullptr) {
+            for (int f = 0; f < MAP_TOTAL_FRAMES; f++) {
+                Rectangle crop = { (float)(f * MAP_FRAME_W), 0.0f,
+                                   (float)MAP_FRAME_W, (float)MAP_FRAME_H };
+                Image frameImg = ImageFromImage(mapSheet, crop);
+                mapFrames.push_back(LoadTextureFromImage(frameImg));
+                UnloadImage(frameImg);
+            }
+            UnloadImage(mapSheet);
+            printf("[Game] Map dibagi menjadi %d frame %dx%d\n",
+                   (int)mapFrames.size(), MAP_FRAME_W, MAP_FRAME_H);
+        } else {
+            printf("[Game] WARNING: gagal load \"assets/Map.png\"\n");
+        }
+    }
     AssetManager::LoadSoundAsset("sfx_laser", "assets/laser_sound.mp3");
     AssetManager::LoadSoundAsset("sfx_missile", "assets/missile_sound.mp3");
     AssetManager::LoadSoundAsset("sfx_freeze", "assets/freeze_sound.wav");
     AssetManager::LoadSoundAsset("sfx_tesla", "assets/tesla_sound.MP3");
     AssetManager::LoadSoundAsset("sfx_plasma", "assets/plasma_sound.mp3");
     AssetManager::LoadSoundAsset("sfx_ult", "assets/ult_sound.mp3");
-    // ── Sprite sheet musuh ──────────────────────────────
+   
     assets.Load("enemy_boss",  "assets/alien_boss.png");
     assets.Load("enemy_fast",  "assets/alien_fast.png");
     assets.Load("enemy_grunt", "assets/alien_grunt.png");
@@ -148,6 +164,8 @@ void Game::Init() {
 
 void Game::Shutdown() {
     assets.UnloadAll();
+    for (Texture2D& f : mapFrames) UnloadTexture(f);
+    mapFrames.clear();
     UnloadTexture(menuGifTexture);
     UnloadImage(menuGifImage);
     if (IsAudioDeviceReady()) {
@@ -238,7 +256,7 @@ void Game::Update(float dt, const InputState& input) {
     CheckEnemyReachedBase();
     CleanupDead();
 
-    // ── Ultimate Hero: damage besar satu frame ──────────
+    // Ultimate Hero: damage besar satu frame 
     if (hero.isUltFiring) {
         for (auto& e : enemies) {
             if (!e.alive) continue;
@@ -252,7 +270,7 @@ void Game::Update(float dt, const InputState& input) {
         hero.isUltFiring = false; // damage hanya di frame pertama
     }
 
-    // ── Timer screen shake ───────────────────────────────
+    // Timer screen shake 
     if (screenShakeTimer > 0) {
         screenShakeTimer -= dt;
         float intensity = screenShakeTimer * 20.0f; // meluruh dari 10 ke 0
@@ -264,7 +282,7 @@ void Game::Update(float dt, const InputState& input) {
         camera.offset.y = 0;
     }
 
-    // ── Cek shop akhir wave ──────────────────────────────
+    //Cek shop akhir wave 
     CheckWaveEndShop();
 
     if (waves.AllWavesComplete() && waves.IsWaveCleared(enemies))
@@ -304,7 +322,7 @@ void Game::UpdateShop(const InputState& in) {
     }
 }
 
-// ─── Input (PLAYING) ────────────────────────────────────
+// Input (PLAYING) 
 
 void Game::HandleInput(const InputState& in) {
     // Mulai wave berikutnya: SPACE ATAU gestur peace-sign tangan kanan
@@ -489,13 +507,12 @@ void Game::Draw() const {
 
     BeginMode2D(camera);
 
-    //Background Map 
-    Texture2D* mapTex = const_cast<AssetManager*>(&assets)->Get("map_bg");
-    if (mapTex && mapTex->id > 0) {
-        Rectangle srcMap = { (float)(currentMapFrame * MAP_FRAME_W), 0.0f,
-                             (float)MAP_FRAME_W, (float)MAP_FRAME_H };
+    //Background Map
+    if (!mapFrames.empty()) {
+        const Texture2D& mapTex = mapFrames[currentMapFrame % mapFrames.size()];
+        Rectangle srcMap = { 0.0f, 0.0f, (float)MAP_FRAME_W, (float)MAP_FRAME_H };
         Rectangle dstMap = { 0.0f, 0.0f, (float)GetScreenWidth(), (float)GetScreenHeight() };
-        DrawTexturePro(*mapTex, srcMap, dstMap, {0,0}, 0.0f, WHITE);
+        DrawTexturePro(mapTex, srcMap, dstMap, {0,0}, 0.0f, WHITE);
     } else {
         // Fallback prosedural (bintang)
         for (int i = 0; i < 80; i++) {

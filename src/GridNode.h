@@ -6,6 +6,8 @@
 class Enemy;
 class Projectile;
 
+//gridnode
+
 class GridNode {
 public:
     int row, col;

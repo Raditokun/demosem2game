@@ -4,6 +4,7 @@
 
 class AssetManager;
 
+//card is for twoer placement and card draftings
 class Card {
 public:
     CardDef def;

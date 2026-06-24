@@ -38,7 +38,7 @@ void Enemy::Update(float dt, const std::vector<Vector2>& path) {
 void Enemy::Draw(AssetManager* assets) const {
     if (!alive) return;
 
-    // ── Tentukan key tekstur ────────────────────────────
+    //  key tekstur 
     const char* texKey = "enemy_grunt";
     switch (type) {
         case EnemyType::GRUNT: texKey = "enemy_grunt"; break;

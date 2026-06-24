@@ -5,18 +5,17 @@
 #include <vector>
 
 
-// ─── Layar ─────────────────────────────────────────────
 constexpr int SCREEN_WIDTH = 1920;
 constexpr int SCREEN_HEIGHT = 1080;
 constexpr int TARGET_FPS = 60;
 
-// ─── Grid ───────────────────────────────────────────────
+// Grid
 constexpr int GRID_COLS = 30;
 constexpr int GRID_ROWS = 14;
 constexpr int CELL_SIZE = 64;
 constexpr int GRID_HEIGHT = GRID_ROWS * CELL_SIZE;
 
-// ─── Panel UI ───────────────────────────────────────────
+
 constexpr int UI_PANEL_HEIGHT = SCREEN_HEIGHT - GRID_HEIGHT;
 constexpr int UI_PANEL_Y = GRID_HEIGHT;
 constexpr int HAND_SIZE = 5;

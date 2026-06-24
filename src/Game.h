@@ -12,6 +12,9 @@
 #include "AssetManager.h"
 
 
+//game class untuk menegalola game state dan logika permainan
+
+
 struct InputState {
     Vector2 cursor;          // piksel ruang-layar
     bool clickDown;          // sedang ditahan (pinch ditahan)
@@ -53,6 +56,11 @@ public:
     float screenShakeTimer;
 
     // ── Background Map Beranimasi ──────────────────────────
+    // Map.png adalah sprite sheet horizontal 12 frame (23040x1080).
+    // Lebar itu melampaui GL_MAX_TEXTURE_SIZE (umumnya 16384) sehingga
+    // tidak bisa di-load sebagai satu Texture2D. Karena itu di-iris
+    // menjadi 12 tekstur frame terpisah saat Init().
+    std::vector<Texture2D> mapFrames;
     float mapAnimTimer = 0.0f;
     int   currentMapFrame = 0;
     static constexpr float MAP_FRAME_TIME = 0.1f;

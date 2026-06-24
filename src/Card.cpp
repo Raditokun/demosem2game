@@ -7,7 +7,7 @@
 Card::Card() : def({0, TowerType::LASER, 1}), selected(false), draftSelected(false) {}
 Card::Card(CardDef d) : def(d), selected(false), draftSelected(false) {}
 
-// ── Bangun key AssetManager untuk tekstur kartu ────────
+// Bangun key AssetManager untuk tekstur kartu 
 // Memetakan TowerType + baseTier → "card_laser_t1", "card_missile_t3", dst.
 static std::string GetCardTextureKey(TowerType type, int tier) {
     const char* prefix = "card_";
@@ -24,7 +24,7 @@ static std::string GetCardTextureKey(TowerType type, int tier) {
     return std::string(buf);
 }
 
-// ── Fallback ikon prosedural (hanya saat tekstur tak ada) ─
+// Fallback 
 static void DrawTowerIcon(float cx, float cy, TowerType type, float scale, Color tc) {
     switch (type) {
     case TowerType::LASER:

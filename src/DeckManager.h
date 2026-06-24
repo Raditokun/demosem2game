@@ -6,6 +6,8 @@
 class AssetManager;
 struct InputState;
 
+//DeckManager untuk mengelola kartu yang dimiliki pemain
+
 
 class DeckManager {
 public:

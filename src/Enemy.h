@@ -5,6 +5,8 @@
 
 class AssetManager;
 
+//Enemy class untuk musuh yang berjalan di jalur
+
 class Enemy {
 public:
   EnemyType type;
@@ -14,7 +16,7 @@ public:
   bool alive;
   float slowTimer, slowFactor;
 
-  // ── Animasi ──────────────────────────────────────────
+  // Animasi 
   float animTimer = 0.0f;
   int   currentFrame = 0;
   int   maxFrames = 4;
