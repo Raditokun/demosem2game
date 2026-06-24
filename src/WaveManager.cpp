@@ -3,58 +3,53 @@
 #include <cstdlib>
 #include <cmath>
 
-WaveManager::WaveManager() : currentWave(-1), currentGroup(0), spawnTimer(0), spawnedThisGroup(0), waveActive(false) {}
+WaveManager::WaveManager() : currentWave(-1), waveActive(false) {}
 
-// ─── Tabel Wave: 25 wave dengan skala Chaos ────────────
+
 // Wave 1–10: progres yang di-tuning manual
 // Wave 11–25: diskalakan prosedural dengan multiplier chaos
 
 void WaveManager::Init() {
     currentWave = -1;
-    currentGroup = 0;
-    spawnTimer = 0;
-    spawnedThisGroup = 0;
     waveActive = false;
     waves.clear();
+    groupSpawned.clear();
+    groupTimer.clear();
 
-    // ── Fase 1: Wave 1–10 tuning manual ───────────────────
-    // Format: waves.push_back({ { kelompok1, kelompok2, ... } });
-    // Tiap kelompok = { count, interval, EnemyType, hpMult }.
-    // Wave dengan SATU kelompok = satu tipe musuh (seperti sebelumnya).
+    
+   
     waves.push_back({{ { 8, 1.0f, EnemyType::GRUNT, 1.0f} }});  // Wave  1
     waves.push_back({{ {12, 0.8f, EnemyType::GRUNT, 1.2f} }});  // Wave  2
-    waves.push_back({{ { 8, 0.6f, EnemyType::FAST,  1.0f} }});  // Wave  3  → SHOP
-
-    // Wave 4: CAMPURAN → 5 TANK dulu, lalu 6 FAST menyusul.
-    waves.push_back({{
-        { 5, 1.5f, EnemyType::TANK, 1.0f},   // kelompok 1: tank
-        { 6, 0.5f, EnemyType::FAST, 1.0f},   // kelompok 2: fast
-    }});                                                       // Wave  4
-
+    waves.push_back({{ { 8, 0.6f, EnemyType::FAST,  1.0f} }});  // SHOP
+    waves.push_back({
+        {                                    // daftar kelompok
+            { 5, 1.5f, EnemyType::TANK, 1.0f},   // kelompok 1: tank
+            { 6, 0.5f, EnemyType::FAST, 1.0f},   // kelompok 2: fast
+        },
+        SpawnOrder::MIXED                    // ← tank & fast keluar kecampur
+    });                                                        // Wave  4
     waves.push_back({{ {15, 0.5f, EnemyType::GRUNT, 1.5f} }});  // Wave  5
     waves.push_back({{ {10, 0.5f, EnemyType::FAST,  1.3f} }});  // Wave  6  → SHOP
-
-    // Wave 7: CAMPURAN → grunt rombongan + diselingi tank.
     waves.push_back({{
         {12, 0.4f, EnemyType::GRUNT, 1.2f},
         { 4, 1.0f, EnemyType::TANK,  1.2f},
     }});                                                       // Wave  7
-
     waves.push_back({{ { 1, 2.0f, EnemyType::BOSS,  1.0f} }});  // Wave  8
     waves.push_back({{ {20, 0.3f, EnemyType::FAST,  1.5f} }});  // Wave  9  → SHOP
-
-    // Wave 10: BOSS dikawal gerombolan grunt.
-    waves.push_back({{
-        { 3, 2.0f, EnemyType::BOSS,  1.5f},
-        {10, 0.3f, EnemyType::GRUNT, 1.5f},
-    }});                                                       // Wave 10
+    waves.push_back({
+        {                                    // boss dikawal gerombolan grunt
+            { 3, 2.0f, EnemyType::BOSS,  1.5f},
+            {10, 0.3f, EnemyType::GRUNT, 1.5f},
+        },
+        SpawnOrder::MIXED                    // ← boss & grunt keluar bersamaan
+    });                                                        // Wave 10
 
  
-    // Tiap wave setelah 10 makin sulit secara progresif:
-    //   - Multiplier jumlah: lerp dari 1.5x ke 2.5x
-    //   - Interval: menyusut 30–50%
-    //   - Multiplier HP: majemuk 1.2x per wave setelah 10
-    //   - Tipe musuh bergeser dari dominan Grunt ke dominan Tank/Boss
+    // Wave 11-25: 
+    // Multiplier jumlah: lerp dari 1.5x ke 2.5x
+    //  Interval: menyusut 30–50%
+    // Multiplier HP: majemuk 1.2x per wave setelah 10
+    // Tipe musuh bergeser dari dominan Grunt ke dominan Tank/Boss
 
     const int CHAOS_START = 10;      // wave indeks-0 ke-10 = "wave 11" bagi pemain
     const int TOTAL_WAVES = 25;
@@ -64,19 +59,19 @@ void WaveManager::Init() {
         int waveIndex = CHAOS_START + i;          // 10..24 (indeks-0)
         float progress = (float)i / (float)(CHAOS_COUNT - 1); // 0.0 → 1.0
 
-        // ── Skala jumlah: base 15, dikali 1.5x → 2.5x ──
+        //  Skala jumlah: base 15, dikali 1.5x → 2.5x 
         float countMult = 1.5f + progress * 1.0f; // 1.5 → 2.5
         int baseCount = 12 + i * 2;               // 12, 14, 16, ... 40
         int count = (int)(baseCount * countMult);
 
-        // ── Interval spawn: menyusut dari 0.5s ke 0.2s ──
+        // Interval spawn: menyusut dari 0.5s ke 0.2s 
         float interval = 0.5f - progress * 0.3f;  // 0.5 → 0.2
         if (interval < 0.15f) interval = 0.15f;
 
-        // ── Multiplier HP: majemuk 1.2x per wave chaos ──
+        // Multiplier HP: majemuk 1.2x per wave chaos 
         float hpMult = powf(1.2f, (float)(i + 1)); // 1.2, 1.44, 1.73, ...
 
-        // ── Pergeseran distribusi tipe musuh ──
+        //  Pergeseran distribusi tipe musuh 
         // Chaos awal   (11-15): mayoritas Fast/Tank
         // Chaos tengah (16-20): campuran Tank/Boss
         // Chaos akhir  (21-25): gerombolan dominan Boss
@@ -123,26 +118,28 @@ void WaveManager::Update(float dt, std::vector<Enemy>& enemies, const std::vecto
     if (!waveActive || currentWave < 0 || currentWave >= (int)waves.size()) return;
     WaveDef& w = waves[currentWave];
 
-    // Masih ada kelompok yang harus di-spawn?
-    if (currentGroup < (int)w.groups.size()) {
-        SpawnGroup& g = w.groups[currentGroup];
-        if (spawnedThisGroup < g.count) {
-            spawnTimer -= dt;
-            if (spawnTimer <= 0) {
-                // Skala HP berbasis wave: +15% per wave di atas hpMult kelompok
-                float waveHpScale = g.hpMult * (1.0f + currentWave * 0.15f);
-                enemies.emplace_back(g.type, path[0], waveHpScale);
-                spawnedThisGroup++;
-                spawnTimer = g.interval;
-            }
-        } else {
-            // Kelompok ini selesai → lanjut ke kelompok berikutnya
-            currentGroup++;
-            spawnedThisGroup = 0;
-            spawnTimer = 0.0f;   // langsung mulai kelompok berikut
+    bool stillSpawning = false;
+    for (size_t i = 0; i < w.groups.size(); i++) {
+        SpawnGroup& g = w.groups[i];
+        if (groupSpawned[i] >= g.count) continue;   // kelompok ini sudah habis
+        stillSpawning = true;
+
+        groupTimer[i] -= dt;
+        if (groupTimer[i] <= 0.0f) {
+            // Skala HP berbasis wave: +15% per wave di atas hpMult kelompok
+            float waveHpScale = g.hpMult * (1.0f + currentWave * 0.15f);
+            enemies.emplace_back(g.type, path[0], waveHpScale);
+            groupSpawned[i]++;
+            groupTimer[i] = g.interval;
         }
-    } else {
-        // Semua kelompok sudah spawn — cek apakah wave selesai
+
+        // SEQUENTIAL: cuma proses kelompok aktif pertama, baru lanjut yang lain
+        // setelah ini habis. MIXED: jangan break → semua kelompok jalan paralel.
+        if (w.order == SpawnOrder::SEQUENTIAL) break;
+    }
+
+    if (!stillSpawning) {
+        // Semua kelompok sudah spawn penuh — cek apakah wave selesai
         bool allDead = true;
         for (auto& e : enemies) { if (e.alive) { allDead = false; break; } }
         if (allDead) waveActive = false;
@@ -152,9 +149,15 @@ void WaveManager::Update(float dt, std::vector<Enemy>& enemies, const std::vecto
 void WaveManager::StartNextWave() {
     currentWave++;
     if (currentWave >= (int)waves.size()) return;
-    currentGroup = 0;
-    spawnedThisGroup = 0;
-    spawnTimer = 0.5f;
+    WaveDef& w = waves[currentWave];
+
+    // Siapkan timer per kelompok. Di-stagger sedikit biar tidak spawn di frame
+    // yang sama persis saat MIXED.
+    groupSpawned.assign(w.groups.size(), 0);
+    groupTimer.assign(w.groups.size(), 0.0f);
+    for (size_t i = 0; i < w.groups.size(); i++)
+        groupTimer[i] = 0.5f + 0.15f * (float)i;   // jeda awal + stagger
+
     waveActive = true;
 }
 

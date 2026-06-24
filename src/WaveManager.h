@@ -10,19 +10,27 @@ struct SpawnGroup {
     float hpMult;
 };
 
-// Satu wave bisa berisi banyak SpawnGroup → beberapa tipe musuh dalam 1 wave.
+// Mode urutan spawn dalam satu wave.
+enum class SpawnOrder {
+    SEQUENTIAL,  // kelompok keluar gantian: kelompok 1 habis dulu, baru kelompok 2
+    MIXED        // semua kelompok keluar paralel → tipe musuh kecampur
+};
+
+// Satu wave bisa berisi banyak SpawnGroup
 struct WaveDef {
     std::vector<SpawnGroup> groups;
+    SpawnOrder order = SpawnOrder::SEQUENTIAL;  // default: gantian
 };
 
 class WaveManager {
 public:
     int currentWave;
-    int currentGroup;       // kelompok yang sedang di-spawn di dalam wave
-    float spawnTimer;
-    int spawnedThisGroup;   // sudah spawn berapa di kelompok ini
     bool waveActive;
     std::vector<WaveDef> waves;
+
+    // State runtime per-kelompok (di-resize tiap StartNextWave)
+    std::vector<int>   groupSpawned;  // sudah spawn berapa per kelompok
+    std::vector<float> groupTimer;    // timer mundur per kelompok
 
     WaveManager();
     void Init();
