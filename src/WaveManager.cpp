@@ -23,8 +23,8 @@ void WaveManager::Init() {
     waves.push_back({{ { 8, 0.6f, EnemyType::FAST,  1.0f} }});  // SHOP
     waves.push_back({
         {                                    // daftar kelompok
-            { 5, 1.5f, EnemyType::TANK, 1.0f},   // kelompok 1: tank
-            { 6, 0.5f, EnemyType::FAST, 1.0f},   // kelompok 2: fast
+            { 5, 1.5f, EnemyType::TANK, 1.0f},   
+            { 6, 0.5f, EnemyType::FAST, 1.0f},   
         },
         SpawnOrder::MIXED                    // ← tank & fast keluar kecampur
     });                                                        // Wave  4
@@ -108,8 +108,7 @@ void WaveManager::Init() {
             }
         }
 
-        // Chaos wave masih satu tipe per wave (satu kelompok).
-        // Mau campuran? Tambahkan SpawnGroup lain ke dalam { ... } di bawah.
+        
         waves.push_back({{ {count, interval, type, hpMult} }});
     }
 }

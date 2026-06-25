@@ -3,7 +3,7 @@
 | Member | Role               |
 | ------ | ------------------ |
 | Dito   | Programer          |
-| Desta  | Designer/Programer |
+| Desta  | Designer           |
 | Weda   | Designer           |
 | Kemal  | Designer           |
 | Reno   | Designer           |

@@ -109,7 +109,6 @@ void Card::DrawInDraft(Rectangle r, AssetManager* assets) const {
         }
     }
 
-    // ── Fallback prosedural ──────────────────────────────
     Color tierCol = GetTierAccent(def.baseTier);
     Color border = draftSelected ? COLOR_CARD_SEL : tierCol;
     float thick = draftSelected ? 3.0f : 1.5f;

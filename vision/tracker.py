@@ -83,7 +83,7 @@ while cap.isOpened():
             extended, n_ext = count_extended_fingers(lm, actual_label)
 
             if actual_label == "Right":
-                # Tangan kanan
+                # Tangan kiri
                 right_hand_present = 1
                 # Kursor + klik 
                 tx, ty = lm[4].x, lm[4].y  # ujung jempol
@@ -103,7 +103,7 @@ while cap.isOpened():
                 if n_ext == 0:
                     ult = 1
 
-            else:  # Tangan kiri
+            else:  # Tangan kanan
                 
                 # telunjuk saja.
                 if n_ext == 1 and "index" in extended:
